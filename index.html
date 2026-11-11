@@ -1,0 +1,27 @@
+// 1. Offline Tesseract Worker Setup
+async function runOfflineOCR(imageSource) {
+  const worker = await Tesseract.createWorker('eng', 1, {
+    workerPath: './worker.min.js',
+    corePath: './tesseract-core-simd.wasm.js',
+    langPath: './', // Looks for ./eng.traineddata.gz locally
+    cacheMethod: 'none'
+  });
+
+  const { data: { text } } = await worker.recognize(imageSource);
+  await worker.terminate();
+  return text;
+}
+
+// 2. South African Retail Margin & VAT (15%) Sell Price Calculator
+// Calculates retail shelf price in ZAR (R) from excl. or incl. supplier cost
+function calculateSellPrice(costPrice, marginPercent, costIncludesVat = false) {
+  const vatRate = 1.15;
+  const baseCost = costIncludesVat ? costPrice / vatRate : costPrice;
+  const sellExclVat = baseCost * (1 + marginPercent / 100);
+  const sellInclVat = sellExclVat * vatRate;
+  return {
+    sellExcl: Number(sellExclVat.toFixed(2)),
+    sellIncl: Number(sellInclVat.toFixed(2)),
+    profitRand: Number((sellExclVat - baseCost).toFixed(2))
+  };
+}
